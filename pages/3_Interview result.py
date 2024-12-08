@@ -67,8 +67,9 @@ if st.session_state["interview_summary"] is None:
             {interview_messages}
             """
 
+            # `gpt-4o-mini` 모델로 요청
             completion = client.chat.completions.create(
-                model="gpt-4",  # gpt 모델을 지정
+                model="gpt-4o-mini",  # gpt 모델을 지정
                 messages=[
                     {"role": "system", "content": "You are an expert mock interview evaluator."},
                     {"role": "user", "content": evaluation_prompt}
@@ -76,26 +77,22 @@ if st.session_state["interview_summary"] is None:
                 temperature=0.7
             )
 
-            st.write("디버깅용 completion 객체:", completion)  # completion 전체 출력
             summary = completion.choices[0].message.content
+            st.session_state["interview_summary"] = summary
 
-        except AttributeError as e:
-            st.error(f"API 응답에서 데이터를 가져오는 중 오류 발생: {e}")
-            st.stop()
         except Exception as e:
-            st.error(f"OpenAI API 호출 중 실패: {e}")
+            st.error(f"면접 결과 요약 또는 점수 평가 중 오류가 발생했습니다: {e}")
             st.stop()
-
 
 # 결과 출력
 summary = st.session_state.get("interview_summary", "")
 if summary:
-    st.markdown("### 면접 내용 요약")
+    st.markdown("📄 면접 내용 요약 📄")
     for section in summary.split("\n\n"):  # 섹션별 출력
         if section.strip():
             st.markdown(section.strip())
 
-    st.markdown("### 평가 점수 및 피드백")
+    st.markdown("🔬 평가 점수 및 피드백 🔬")
     feedback_start = summary.find("Feedback:")
     if feedback_start != -1:
         st.markdown(summary[feedback_start:])

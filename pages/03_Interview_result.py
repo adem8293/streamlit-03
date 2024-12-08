@@ -1,5 +1,5 @@
 import streamlit as st
-import openai  # ensure this library is installed (pip install openai)
+import openai
 
 # 사용자 정보 및 대화 기록 확인
 user_info = st.session_state.get("user_info", None)
@@ -19,7 +19,7 @@ if api_key is None:
         st.switch_page("pages/1_User information.py")
     st.stop()
 
-# OpenAI 초기화
+# OpenAI API Key 설정
 openai.api_key = api_key
 
 st.title("면접 결과 요약 및 점수 확인")
@@ -31,7 +31,7 @@ st.write("아래는 AI 모의 면접관이 생성한 요약 및 평가 결과입
 if "interview_summary" not in st.session_state:
     with st.spinner("면접 요약 및 평가 생성 중..."):
         try:
-            # 면접 요약을 생성하기 위한 OpenAI 프롬프트
+            # 면접 대화 기록을 기반으로 요약 생성 요청
             summary_prompt = f"""
             Based on the following interview transcript, provide:
             1. A summary of the interview (in bullet points).
@@ -43,15 +43,17 @@ if "interview_summary" not in st.session_state:
             {interview_messages}
             """
 
-            # GPT 모델 호출 (제대로 초기화한 gpt 터미널 메서드 사용)
+            # OpenAI 새로운 인터페이스 호출
             response = openai.ChatCompletion.create(
-                model="gpt-4",  # 모델 설정. 필요시 "gpt-3.5-turbo" 사용 가능
+                model="gpt-4",  # 사용할 모델 ("gpt-4" 또는 "gpt-3.5-turbo")
                 messages=[
                     {"role": "system", "content": "You are an expert mock interview evaluator."},
-                    {"role": "user", "content": summary_prompt},
-                ]
+                    {"role": "user", "content": summary_prompt}
+                ],
+                temperature=0.7
             )
-            # 응답 결과 저장
+
+            # 응답 내용 저장
             summary = response["choices"][0]["message"]["content"]
             st.session_state["interview_summary"] = summary
 
@@ -59,7 +61,7 @@ if "interview_summary" not in st.session_state:
             st.error(f"면접 요약 생성 중 오류가 발생했습니다: {e}")
             st.stop()
 
-# 요약 결과 출력
+# 요약 및 점수 표시
 summary = st.session_state.get("interview_summary", None)
 if summary:
     st.markdown("### 면접 요약")
@@ -68,7 +70,7 @@ if summary:
     st.markdown("### 피드백과 점수")
     st.markdown(summary.split("\n\n")[1])
 
-# 최종 요약 다운로드
+# 최종 다운로드 옵션
 downloadable_text = f"""
 ## Mock Interview Summary for {user_info['면접을 볼 회사']}:
 

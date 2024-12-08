@@ -77,7 +77,7 @@ if st.session_state["interview_summary"] is None:
                     {"role": "system", "content": "You are an expert mock interview evaluator."},
                     {"role": "user", "content": evaluation_prompt}
                 ],
-                temperature=0.7
+                temperature=0.7,
                 request_timeout=90  # 최대 60초 타임아웃
             )
             summary = completion.choices[0].message.content

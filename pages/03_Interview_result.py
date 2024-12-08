@@ -29,7 +29,7 @@ if st.button("면접 요약 보기"):
 
         # OpenAI API 호출: 대화 요약
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "다음 대화를 요약하고 면접자의 주요 답변을 분석하세요."},
                 {"role": "user", "content": conversation}

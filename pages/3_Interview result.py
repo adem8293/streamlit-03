@@ -69,7 +69,6 @@ if st.session_state["interview_summary"] is None:
             ## Transcript:
             {interview_messages}
             """
-
             # `gpt-4o-mini` 모델로 요청
             response = client.chat.completions.create(
                 model="gpt-4o-mini",  # gpt 모델을 지정
@@ -85,7 +84,21 @@ if st.session_state["interview_summary"] is None:
             print(summary)  # 성공적으로 응답 수신
 
         except openai.error.Timeout as e:
-            st.error(f"OpenAI API 요청이 타임아웃되었습니다: {e}")
+        # 타임아웃 발생 시 에러 메시지를 사용자에게 표시
+        st.error("OpenAI API 요청이 타임아웃되었습니다. 다시 시도하거나 이전 페이지로 이동해 주세요.")
+
+        # 다시 실행 버튼과 2번 페이지 이동 버튼 제공
+        col1, col2 = st.columns(2)
+
+        with col1:
+        if st.button("다시 시도"):
+            st.experimental_rerun()  # 페이지를 재실행하여 API를 다시 호출
+        with col2:
+        if st.button("이전 페이지로 이동"):
+            st.session_state.clear()  # 상태 초기화 (선택적으로 사용)
+            st.experimental_set_query_params()  # URL 상태 초기화
+            st.experimental_rerun()  # 페이지 새로고침 (1번 또는 2번 페이지로)
+
         except Exception as e:
             st.error(f"면접 결과 요약 또는 점수 평가 중 오류가 발생했습니다: {e}")
             st.stop()

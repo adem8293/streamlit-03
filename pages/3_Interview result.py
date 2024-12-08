@@ -42,6 +42,9 @@ def show_message(msg):
     with st.chat_message(msg['role']):
         st.markdown(msg["content"])
 
+if "result_messages" not in st.session_state:
+    st.session_state.result_messages = []
+
 for msg in st.session_state.result_messages[1:]:
     show_message(msg)
 

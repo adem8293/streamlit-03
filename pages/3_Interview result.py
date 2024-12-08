@@ -66,10 +66,9 @@ if st.session_state["interview_summary"] is None:
             ## Transcript:
             {interview_messages}
             """
-
-            # `gpt-4o-mini` 모델로 요청
+            
             completion = client.chat.completions.create(
-                model="gpt-4o-mini",  # gpt 모델을 지정
+                model="gpt-4",  # gpt 모델을 지정
                 messages=[
                     {"role": "system", "content": "You are an expert mock interview evaluator."},
                     {"role": "user", "content": evaluation_prompt}

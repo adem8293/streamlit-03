@@ -78,11 +78,14 @@ if st.session_state["interview_summary"] is None:
                     {"role": "user", "content": evaluation_prompt}
                 ],
                 temperature=0.7
+                request_timeout=90  # 최대 60초 타임아웃
             )
-
             summary = completion.choices[0].message.content
             st.session_state["interview_summary"] = summary
+            print(summary)  # 성공적으로 응답 수신
 
+        except openai.error.Timeout as e:
+            st.error(f"OpenAI API 요청이 타임아웃되었습니다: {e}")
         except Exception as e:
             st.error(f"면접 결과 요약 또는 점수 평가 중 오류가 발생했습니다: {e}")
             st.stop()

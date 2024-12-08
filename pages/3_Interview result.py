@@ -48,7 +48,7 @@ if "interview_summary" not in st.session_state:
             ## Transcript:
             {interview_messages}
             """
-            response = client.chat.completions.create(
+            completion = client.chat.completions.create(
                 model="gpt-4o-mini",  # gpt-4o-mini 모델을 지정
                 messages=[
                     {"role": "system", "content": "You are an expert mock interview evaluator."},
@@ -56,7 +56,7 @@ if "interview_summary" not in st.session_state:
                 ],
                 temperature=0.7
             )
-            summary = response.choices[0].message.content  # 수정된 부분
+            summary = completion.choices[0].message.content  # 수정된 부분
             st.session_state["interview_summary"] = summary
 
         except Exception as e:

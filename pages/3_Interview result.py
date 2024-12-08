@@ -1,6 +1,7 @@
 import streamlit as st
 import openai
 import os
+import time
 
 # Page title
 st.title("면접 결과 확인")
@@ -67,18 +68,28 @@ if st.session_state["interview_summary"] is None:
             {interview_messages}
             """
 
-            # `gpt-4o-mini` 모델로 요청
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",  # gpt-4o-mini 모델을 지정
-                messages=[
-                    {"role": "system", "content": "You are an expert mock interview evaluator."},
-                    {"role": "user", "content": evaluation_prompt}
-                ],
-                temperature=0.7
-            )
+            def generate_summary():
+                # OpenAI 요청 처리
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": "You are an expert mock interview evaluator."},
+                        {"role": "user", "content": evaluation_prompt}
+                    ],
+                    temperature=0.7
+                )
+                return response.choices[0].message.content
 
-            summary = response.choices[0].message.content
-            st.session_state["interview_summary"] = summary
+            # 타임아웃 제한 설정 (10초 예시)
+            timeout_seconds = 10
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(generate_summary)
+                try:
+                    summary = future.result(timeout=timeout_seconds)  # 타임아웃 설정
+                    st.session_state["interview_summary"] = summary
+                except concurrent.futures.TimeoutError:
+                    st.error("면접 결과 생성이 시간이 너무 오래 걸려 중단되었습니다. 다시 시도해주세요.")
+                    st.stop()
 
         except Exception as e:
             st.error(f"면접 결과 요약 또는 점수 평가 중 오류가 발생했습니다: {e}")

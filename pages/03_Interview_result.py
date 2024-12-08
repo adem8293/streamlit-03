@@ -1,5 +1,5 @@
 import streamlit as st
-import openai  # Ensure you have this installed
+import openai
 import os
 
 # Page title
@@ -26,7 +26,7 @@ if client is None:
         st.switch_page("pages/1_User information.py")
     st.stop()
 
-# 이전 대화 불러오기
+# Chat history retrieval
 if "result_messages" not in st.session_state:
     st.session_state.result_messages = []
 
@@ -67,9 +67,9 @@ if st.session_state["interview_summary"] is None:
             {interview_messages}
             """
 
-            # OpenAI GPT-4 API 호출
+            # `gpt-4o-mini` 모델로 요청
             response = openai.ChatCompletion.create(
-                model="gpt-4",  # 사용할 모델
+                model="gpt-4o-mini",  # gpt-4o-mini 모델을 지정
                 messages=[
                     {"role": "system", "content": "You are an expert mock interview evaluator."},
                     {"role": "user", "content": evaluation_prompt}

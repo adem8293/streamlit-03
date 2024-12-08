@@ -66,24 +66,26 @@ if st.session_state["interview_summary"] is None:
             ## Transcript:
             {interview_messages}
             """
-            
-            completion = client.chat.completions.create(
-        model="gpt-4",  # gpt 모델을 지정
-        messages=[
-            {"role": "system", "content": "You are an expert mock interview evaluator."},
-            {"role": "user", "content": evaluation_prompt}
-        ],
-        temperature=0.7
-    )
-    st.write("디버깅용 completion 객체:", completion)  # completion 전체 출력
-    summary = completion.choices[0].message.content
 
-except AttributeError as e:
-    st.error(f"API 응답에서 데이터를 가져오는 중 오류 발생: {e}")
-    st.stop()
-except Exception as e:
-    st.error(f"OpenAI API 호출 중 실패: {e}")
-    st.stop()
+            completion = client.chat.completions.create(
+                model="gpt-4",  # gpt 모델을 지정
+                messages=[
+                    {"role": "system", "content": "You are an expert mock interview evaluator."},
+                    {"role": "user", "content": evaluation_prompt}
+                ],
+                temperature=0.7
+            )
+
+            st.write("디버깅용 completion 객체:", completion)  # completion 전체 출력
+            summary = completion.choices[0].message.content
+
+        except AttributeError as e:
+            st.error(f"API 응답에서 데이터를 가져오는 중 오류 발생: {e}")
+            st.stop()
+        except Exception as e:
+            st.error(f"OpenAI API 호출 중 실패: {e}")
+            st.stop()
+
 
 # 결과 출력
 summary = st.session_state.get("interview_summary", "")

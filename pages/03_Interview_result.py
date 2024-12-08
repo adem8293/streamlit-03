@@ -1,78 +1,105 @@
 import streamlit as st
-import openai
+import openai  # Ensure you have this installed
+import os
 
-# 사용자 정보 및 대화 기록 확인
-user_info = st.session_state.get("user_info", None)
-interview_messages = st.session_state.get("interview_messages", None)
+# Page title
+st.title("면접 결과 확인")
 
-if user_info is None or interview_messages is None:
-    st.error("면접 정보를 찾을 수 없습니다. 다시 시도해주세요.")
-    if st.button("사용자 정보 입력 페이지로 이동"):
+## 면접 진행 여부 확인
+end_interview = st.session_state.get('interview ended', None)
+if end_interview is None or not end_interview:
+    if st.button("면접을 진행하지 않았습니다."):
+        st.switch_page("pages/2_Mock Interview.py")
+    st.stop()
+
+## 사용자 정보 확인
+user_info = st.session_state.get('user_info', None)
+if user_info is None:
+    if st.button("사용자 정보가 입력되지 않았습니다."):
         st.switch_page("pages/1_User information.py")
     st.stop()
 
-# API Key 확인
-api_key = st.session_state.get("api_key", None)
-if api_key is None:
-    st.error("OpenAI API Key가 설정되지 않았습니다.")
-    if st.button("초기 화면으로 이동"):
+## OpenAI Client 확인
+client = st.session_state.get('openai_client', None)
+if client is None:
+    if st.button("사용자 정보에서 API 키가 입력되지 않았습니다."):
         st.switch_page("pages/1_User information.py")
     st.stop()
 
-# OpenAI API Key 설정
-openai.api_key = api_key
+# 이전 대화 불러오기
+if "result_messages" not in st.session_state:
+    st.session_state.result_messages = []
 
-st.title("면접 결과 요약 및 점수 확인")
-st.subheader(f"면접 본 회사: {user_info['면접을 볼 회사']}")
+# 면접 대화 기록 불러오기
+interview_messages = st.session_state.get("interview_messages", [])
 
-st.write("아래는 AI 모의 면접관이 생성한 요약 및 평가 결과입니다. 잠시 기다려 주세요.")
+if not interview_messages:
+    st.error("면접 대화 기록을 찾을 수 없습니다. 먼저 면접을 진행해주세요.")
+    st.stop()
 
-# 면접 요약 생성
+# Show previous messages (if any)
+def show_message(msg):
+    with st.chat_message(msg['role']):
+        st.markdown(msg["content"])
+
+for msg in st.session_state.result_messages[1:]:
+    show_message(msg)
+
+# 면접 결과 요약 및 점수 평가
 if "interview_summary" not in st.session_state:
-    with st.spinner("면접 요약 및 평가 생성 중..."):
-        try:
-            # 면접 대화 기록을 기반으로 요약 생성 요청
-            summary_prompt = f"""
-            Based on the following interview transcript, provide:
-            1. A summary of the interview (in bullet points).
-            2. Feedback on the candidate's communication skills, relevance, and adaptability.
-            3. A score from 1-10 for the following criteria: communication, relevance, and adaptability.
-            4. An overall score on a scale of 1-10.
+    st.session_state["interview_summary"] = None
 
-            ## Interview Transcript:
+if st.session_state["interview_summary"] is None:
+    with st.spinner("면접 결과를 요약하고 점수를 평가 중입니다..."):
+        try:
+            # GPT 프롬프트 작성
+            evaluation_prompt = f"""
+            You are an expert interview evaluator. Summarize and score the following mock interview based on the content. Provide the following:
+            1. A concise summary of the interview (bullet points are preferred).
+            2. Feedback on the candidate's communication, relevance of answers, and adaptability.
+            3. Provide individual scores out of 10 for:
+              - Communication skills
+              - Relevance to the questions asked
+              - Adaptability
+            4. A final overall score out of 10.
+            
+            ## Transcript:
             {interview_messages}
             """
 
-            # OpenAI 새로운 인터페이스 호출
+            # OpenAI GPT-4 API 호출
             response = openai.ChatCompletion.create(
-                model="gpt-4",  # 사용할 모델 ("gpt-4" 또는 "gpt-3.5-turbo")
+                model="gpt-4",  # 사용할 모델
                 messages=[
                     {"role": "system", "content": "You are an expert mock interview evaluator."},
-                    {"role": "user", "content": summary_prompt}
+                    {"role": "user", "content": evaluation_prompt}
                 ],
                 temperature=0.7
             )
 
-            # 응답 내용 저장
             summary = response["choices"][0]["message"]["content"]
             st.session_state["interview_summary"] = summary
 
         except Exception as e:
-            st.error(f"면접 요약 생성 중 오류가 발생했습니다: {e}")
+            st.error(f"면접 결과 요약 또는 점수 평가 중 오류가 발생했습니다: {e}")
             st.stop()
 
-# 요약 및 점수 표시
-summary = st.session_state.get("interview_summary", None)
+# 결과 출력
+summary = st.session_state.get("interview_summary", "")
 if summary:
-    st.markdown("### 면접 요약")
-    st.markdown(summary.split("\n\n")[0])
+    st.markdown("### 면접 내용 요약")
+    for section in summary.split("\n\n"):  # 섹션별 출력
+        if section.strip():
+            st.markdown(section.strip())
 
-    st.markdown("### 피드백과 점수")
-    st.markdown(summary.split("\n\n")[1])
+    st.markdown("### 평가 점수 및 피드백")
+    feedback_start = summary.find("Feedback:")
+    if feedback_start != -1:
+        st.markdown(summary[feedback_start:])
 
-# 최종 다운로드 옵션
+# 다운로드 버튼
 downloadable_text = f"""
-## Mock Interview Summary for {user_info['면접을 볼 회사']}:
+Mock Interview Summary for {user_info['면접을 볼 회사']}:
 
 {summary}
 """
@@ -81,10 +108,11 @@ st.markdown("### 다운로드 옵션")
 st.download_button(
     label="결과 다운로드 (txt)",
     data=downloadable_text,
-    file_name=f"{user_info['면접을 볼 회사']}_summary.txt",
+    file_name=f"{user_info['면접을 볼 회사']}_interview_summary.txt",
     mime="text/plain"
 )
 
+# 앱 다시 시작 옵션
 if st.button("다시 시작하기"):
     st.session_state.clear()
     st.experimental_rerun()
